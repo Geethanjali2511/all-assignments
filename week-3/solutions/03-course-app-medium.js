@@ -2,6 +2,8 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const app = express();
+const cors= require("cors");
+app.use(cors());
 
 app.use(express.json());
 
@@ -36,21 +38,50 @@ const authenticateJwt = (req, res, next) => {
     });
   } else {
     res.sendStatus(401);
-  }
+  }useEffect(() =>{
+    function callback2(data){
+        console.log(data)
+        if(data.username){
+            setUserEmail(data.username)
+        }
+    }
+    function callback1(res){
+        res.json().then(callback2)
+        
+
+    }
+    fetch("http://localhost:3000/admin/me", {
+      method:"GET",
+        headers:{
+            "Content-type": "application/json",
+            "Authorization": "Bearer " + localStorage.getItem("token")
+        }
+    }).then(callback1)
+    }, [] );
+
 };
+
+app.get("/admin/me",authenticateJwt, (req, res) => {
+  console.log("Admin me called")
+  res.json({
+    username: req.user.username
+  })
+});
 
 // Admin routes
 app.post('/admin/signup', (req, res) => {
   const { username, password } = req.body;
   const admin = ADMINS.find(a => a.username === username);
-  console.log("admin signup");
+  console.log("admin signup", admin);
   if (admin) {
     res.status(403).json({ message: 'Admin already exists' });
   } else {
     const newAdmin = { username, password };
+    console.log
     ADMINS.push(newAdmin);
     fs.writeFileSync('admins.json', JSON.stringify(ADMINS));
     const token = jwt.sign({ username, role: 'admin' }, SECRET, { expiresIn: '1h' });
+    console.log("Admin created successfully")
     res.json({ message: 'Admin created successfully', token });
   }
 });
